@@ -3,17 +3,20 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-#define N 50
-#define M 30
-#define cellSize 30
-#define SIMSPEED 10
+#define N 350
+#define M 180
+#define cellSize 5
+#define borderSize 0
+#define SIMSPEED 5 // Smaller is faster, bigger is slower
 
 typedef enum {
     CONWAY,   
     SEEDS,
     ODD_EVEN,
     DAY_NIGHT,
-    DIAMOEBA
+    DIAMOEBA,
+    MAZE,
+    HIGHLIFE
 } RuleType;
 
 void nextGen(int matrix[N][M], RuleType rule) {
@@ -64,6 +67,25 @@ void nextGen(int matrix[N][M], RuleType rule) {
                         nextMatrix[i][j] = 1;
                     } 
                     else {
+                        nextMatrix[i][j] = 0;
+                    }
+                    break;
+                case MAZE:
+                    if(matrix[i][j] == 0 && aliveNeighbors == 3) {
+                        nextMatrix[i][j] = 1;
+                    } else if(matrix[i][j] == 1 && (aliveNeighbors >= 1 && aliveNeighbors <= 4)) {
+                        nextMatrix[i][j] = 1;
+                    } else {
+                        nextMatrix[i][j] = 0;
+
+                    }
+                    break;
+                case HIGHLIFE:
+                    if (matrix[i][j] == 1 && (aliveNeighbors == 2 || aliveNeighbors == 3)) {
+                        nextMatrix[i][j] = 1;
+                    } else if (matrix[i][j] == 0 && (aliveNeighbors == 3 || aliveNeighbors == 6)) {
+                        nextMatrix[i][j] = 1;
+                    } else {
                         nextMatrix[i][j] = 0;
                     }
                     break;
@@ -139,22 +161,24 @@ int main(void)
                     
                     Color colorCelda = (matrix[i][j] == 0) ? BLACK : WHITE;
 
-                    DrawRectangle(posX, posY, cellSize -2, cellSize -2, colorCelda);  
+                    DrawRectangle(posX, posY, cellSize - borderSize, cellSize - borderSize, colorCelda);  
                 }
             }
             
             
             
             // Rule selection
-            // --- 3. BARRA DE HERRAMIENTAS (UI) ---
             int yUI = screenHeight - 50;
 
-            Rectangle buttonArea = { 20, yUI, 200, 40 };
+            Rectangle buttonArea = { 20, yUI, 150, 40 };
 
-            GuiToggleGroup(buttonArea, "CONWAY;SEEDS;ODD-EVEN;DAY-NIGHT;DIAMOEBA", (int*)&selectedRule);
+            GuiToggleGroup(buttonArea, "CONWAY;SEEDS;ODD-EVEN;DAY-NIGHT;DIAMOEBA;MAZE;HIGHLIFE", (int*)&selectedRule);
 
             Rectangle simBtnRect = { screenWidth - 250, screenHeight - 50, 200, 40 };
-            GuiButton(simBtnRect, simActive ? "STOP SIMULATION" : "START SIMULATION") && (simActive = !simActive);
+                        Color btnColor = simActive ? RED : GREEN;
+                        GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt(btnColor));
+                        GuiButton(simBtnRect, simActive ? "STOP SIMULATION" : "START SIMULATION") && (simActive = !simActive);
+                        GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt((Color){0, 121, 241, 255}));
             
         EndDrawing();
         //----------------------------------------------------------------------------------
