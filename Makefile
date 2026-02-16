@@ -36,7 +36,7 @@ endif
 OUTPUT = mi_app$(EXE_EXT)
 
 # Source files
-SRCS = main.c
+SRCS = main.c nextgen.c patterns.c
 
 # Default target
 all: $(OUTPUT)

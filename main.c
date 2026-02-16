@@ -2,118 +2,31 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
-
-#define N 350
-#define M 180
-#define cellSize 5
-#define borderSize 0
-#define SIMSPEED 5 // Smaller is faster, bigger is slower
+#include "nextgen.h"
+#include "settings.h"
+#include "patterns.h"
 
 typedef enum
 {
-    CONWAY,
-    SEEDS,
-    ODD_EVEN,
-    DAY_NIGHT,
-    DIAMOEBA,
-    MAZE,
-    HIGHLIFE
-} RuleType;
+    MOORE,
+    VON_NEUMANN
+} NeighborhoodType;
 
-void nextGen(int matrix[N][M], RuleType rule)
+void nextGen(int matrix[N][M], RuleType rule, NeighborhoodType neighborhood)
 {
-    int nextMatrix[N][M];
-
-    for (size_t i = 0; i < N; i++)
+    switch (neighborhood)
     {
-        for (size_t j = 0; j < M; j++)
-        {
-            int aliveNeighbors = 0;
+    case MOORE:
+        nextMoore(matrix, rule);
+        break;
 
-            // count alive neighbors
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    if (x == 0 && y == 0)
-                        continue;
-                    int ni = i + x;
-                    int nj = j + y;
-                    if (ni >= 0 && ni < N && nj >= 0 && nj < M)
-                    {
-                        aliveNeighbors += matrix[ni][nj];
-                    }
-                }
-            }
-
-            switch (rule)
-            {
-            case CONWAY:
-                nextMatrix[i][j] = (matrix[i][j] == 1) ? (aliveNeighbors == 2 || aliveNeighbors == 3) : (aliveNeighbors == 3);
-                break;
-            case SEEDS:
-                nextMatrix[i][j] = (matrix[i][j] == 0) ? (aliveNeighbors == 2) : 0;
-                break;
-            case ODD_EVEN:
-                nextMatrix[i][j] = (aliveNeighbors % 2 == 1) ? 1 : 0;
-                break;
-            case DAY_NIGHT:
-                nextMatrix[i][j] = (matrix[i][j] == 1) ? (aliveNeighbors == 3 || aliveNeighbors == 4 || aliveNeighbors == 6 || aliveNeighbors == 7 || aliveNeighbors == 8) : (aliveNeighbors == 3 || aliveNeighbors == 6 || aliveNeighbors == 7 || aliveNeighbors == 8);
-                break;
-            case DIAMOEBA:
-                if (aliveNeighbors >= 5 && aliveNeighbors <= 8)
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else if (matrix[i][j] == 0 && aliveNeighbors == 3)
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else
-                {
-                    nextMatrix[i][j] = 0;
-                }
-                break;
-            case MAZE:
-                if (matrix[i][j] == 0 && aliveNeighbors == 3)
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else if (matrix[i][j] == 1 && (aliveNeighbors >= 1 && aliveNeighbors <= 4))
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else
-                {
-                    nextMatrix[i][j] = 0;
-                }
-                break;
-            case HIGHLIFE:
-                if (matrix[i][j] == 1 && (aliveNeighbors == 2 || aliveNeighbors == 3))
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else if (matrix[i][j] == 0 && (aliveNeighbors == 3 || aliveNeighbors == 6))
-                {
-                    nextMatrix[i][j] = 1;
-                }
-                else
-                {
-                    nextMatrix[i][j] = 0;
-                }
-                break;
-            }
-        }
-    }
-
-    for (size_t i = 0; i < N; i++)
-    {
-        for (size_t j = 0; j < M; j++)
-        {
-            matrix[i][j] = nextMatrix[i][j];
-        }
+    case VON_NEUMANN:
+        nextVonNeumann(matrix, rule);
+        break;
     }
 }
+
+
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -123,7 +36,7 @@ int main(void)
     // Initialization
     //--------------------------------------------------------------------------------------
     const int screenWidth = N * cellSize;
-    const int screenHeight = M * cellSize + 50;
+    const int screenHeight = M * cellSize + 40;
 
     InitWindow(screenWidth, screenHeight, "Cellular Automatas");
 
@@ -131,6 +44,7 @@ int main(void)
     RuleType selectedRule = CONWAY;
     bool simActive = false;
     int frameCounter = 0;
+    NeighborhoodType neighborhood = MOORE;
 
     SetTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -156,7 +70,7 @@ int main(void)
             frameCounter++;
             if (frameCounter >= SIMSPEED)
             {
-                nextGen(matrix, selectedRule);
+                nextGen(matrix, selectedRule, neighborhood);
                 frameCounter = 0;
             }
         }
@@ -176,24 +90,39 @@ int main(void)
                 int posX = i * cellSize;
                 int posY = j * cellSize;
 
-                Color colorCelda = (matrix[i][j] == 0) ? BLACK : WHITE;
+                Color colorCelda = (matrix[i][j] == 0) ? DEAD : ALIVE;
 
                 DrawRectangle(posX, posY, cellSize - borderSize, cellSize - borderSize, colorCelda);
             }
         }
 
         // Rule selection
-        int yUI = screenHeight - 50;
+        int yUI = screenHeight - 40;
 
-        Rectangle buttonArea = {20, yUI, 150, 40};
+        Rectangle buttonArea = {20, yUI, 100, 40};
 
-        GuiToggleGroup(buttonArea, "CONWAY;SEEDS;ODD-EVEN;DAY-NIGHT;DIAMOEBA;MAZE;HIGHLIFE", (int *)&selectedRule);
+        switch (neighborhood)
+        {
+        case MOORE:
+            GuiToggleGroup(buttonArea, "CONWAY;SEEDS;ODD-EVEN;DAY-NIGHT;DIAMOEBA;MAZE;HIGHLIFE", (int *)&selectedRule);
+            if (GuiButton((Rectangle){screenWidth - 600, screenHeight - 40, 40, 40}, "???")) {
+                conwayPattern(matrix);
+            }  break;
 
-        Rectangle simBtnRect = {screenWidth - 250, screenHeight - 50, 200, 40};
+        case VON_NEUMANN:
+            GuiToggleGroup(buttonArea, "ODD-EVEN;EXPAND", (int *)&selectedRule);
+            break;
+        }
+
+        Rectangle simBtnRect = {screenWidth - 250, screenHeight - 40, 200, 40};
         Color btnColor = simActive ? RED : GREEN;
         GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt(btnColor));
         GuiButton(simBtnRect, simActive ? "STOP SIMULATION" : "START SIMULATION") && (simActive = !simActive);
         GuiSetStyle(BUTTON, BASE_COLOR_FOCUSED, ColorToInt((Color){0, 121, 241, 255}));
+
+        GuiButton((Rectangle){screenWidth - 450, screenHeight - 40, 200, 40}, "CLEAR") && (memset(matrix, 0, sizeof(matrix)));
+
+        GuiToggleGroup((Rectangle){10, 10, 80, 40}, "MOORE;VON-NEUMANN", (int *)&neighborhood);
 
         EndDrawing();
         //----------------------------------------------------------------------------------
