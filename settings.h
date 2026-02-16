@@ -3,17 +3,11 @@
 
 #define N 350
 #define M 180
-#define cellSize 5
-#define borderSize 0
+#define cellSize 5 // Size of each cell in pixels. Adjust to fit more or fewer cells on the screen.
+#define borderSize 0 // non-zero for grid lines
 #define SIMSPEED 5 // Smaller is faster, bigger is slower
 #define DEAD BLACK
 #define ALIVE RED
 
-/*
-1080p smallest pixels
-#define N 1500
-#define M 700
-#define cellSize 1
-*/
 
 #endif

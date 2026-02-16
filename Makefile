@@ -1,9 +1,10 @@
 # Cellular Automata Makefile - Cross-platform
+# Variables
 
 # Detect operating system
 ifeq ($(OS),Windows_NT)
 	DETECTED_OS = WINDOWS
-	RM = del /Q
+	RM = cmd /c del /Q
 	EXE_EXT = .exe
 else
 	DETECTED_OS = UNIX
@@ -53,4 +54,8 @@ run: $(OUTPUT)
 clean:
 	$(RM) $(OUTPUT)
 
-.PHONY: all run clean
+# Clear all previous compilations
+clear:
+	$(RM) $(OUTPUT)
+
+.PHONY: all run clean clear
